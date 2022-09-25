@@ -11,22 +11,13 @@ public class PatternMatching {
 
     public static String attackTarget(Object target) {
         LOGGER.info("Attacking {}", target);
-        String formatted;
-        if (target == null) {
-            formatted = "null target";
-        } else if (target instanceof Mewtwo) {
-            formatted = "Un-identified target, don't think you want to attack...";
-        } else if (target instanceof Pokemon pokemon) {
-            formatted = "Attacking pokemon %s".formatted(pokemon.getClass().getSimpleName());
-        } else if (target instanceof Arena arena) {
-            if (arena.hasBadge()) {
-                formatted = "Cannot attack %s arena, we already own the badge".formatted(arena.championName());
-            } else {
-                formatted = "Attacking %s arena, with champion %s".formatted(arena.type(), arena.championName());
-            }
-        } else {
-            formatted = "%s is not a valid target".formatted(target.getClass().getSimpleName());
-        }
-        return formatted;
+        return switch (target) {
+            case null -> "null target";
+            case Mewtwo mewtwo -> "Un-identified target, don't think you want to attack...";
+            case Pokemon pokemon -> "Attacking pokemon %s".formatted(pokemon.getClass().getSimpleName());
+            case Arena arena when arena.hasBadge() -> "Cannot attack %s arena, we already own the badge".formatted(arena.championName());
+            case Arena arena -> "Attacking %s arena, with champion %s".formatted(arena.type(), arena.championName());
+            default -> "%s is not a valid target".formatted(target.getClass().getSimpleName());
+        };
     }
 }
