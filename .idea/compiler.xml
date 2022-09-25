@@ -13,7 +13,7 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_STRING" value="--enable-preview" />
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="meritis-java19" options="" />
+      <module name="meritis-java19" options="--enable-preview --add-modules=jdk.incubator.concurrent" />
     </option>
   </component>
 </project>

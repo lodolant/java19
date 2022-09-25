@@ -5,6 +5,7 @@ import com.github.lodolant.java19.model.Attack;
 import com.github.lodolant.java19.model.GameboyData;
 import com.github.lodolant.java19.model.PokemonKind;
 import com.github.lodolant.java19.model.pokemon.*;
+import jdk.incubator.concurrent.StructuredTaskScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,20 +23,15 @@ public class StructuredConcurrency {
 
     public static Optional<GameboyData> loadData(boolean shouldFail) {
         Instant begin = Instant.now();
-        // Asynchronous
-        Future<List<Pokemon>> futurePokemons = VirtualThread.submit(getPokemons(shouldFail));
-        Future<List<Arena>> futureArenas = VirtualThread.submit(getArenas());
-        Future<List<Attack>> futureAttacks = VirtualThread.submit(getAttacks());
-        Future<List<PokemonKind>> futurePokemonKinds = VirtualThread.submit(getPokemonKinds());
-
-        // Blocking
-        try {
-            List<Pokemon> pokemons = futurePokemons.get();
-            List<Arena> arenas = futureArenas.get();
-            List<Attack> attacks = futureAttacks.get();
-            List<PokemonKind> pokemonKinds = futurePokemonKinds.get();
-            LOGGER.info("Data loaded");
-            return Optional.of(new GameboyData(pokemons, arenas, attacks, pokemonKinds));
+        try (StructuredTaskScope.ShutdownOnFailure scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            Future<List<Pokemon>> pokemons = scope.fork(getPokemons(shouldFail));
+            Future<List<Arena>> arenas = scope.fork(getArenas());
+            Future<List<Attack>> attacks = scope.fork(getAttacks());
+            Future<List<PokemonKind>> kinds = scope.fork(getPokemonKinds());
+            scope.join();
+            scope.throwIfFailed();
+            GameboyData gameboyData = new GameboyData(pokemons.resultNow(), arenas.resultNow(), attacks.resultNow(), kinds.resultNow());
+            return Optional.of(gameboyData);
         } catch (Exception e) {
             LOGGER.info("Error encountered : {}", e.getLocalizedMessage());
             return Optional.empty();
